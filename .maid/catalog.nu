@@ -85,4 +85,28 @@ let MAID_CATALOG = [
     prune: null
     update: {|| ^dotnet tool update --all --global }
   }
+  {
+    name: rustup
+    category: toolchain
+    detect: "^where rustup"
+    clean: null
+    prune: {|| rustup toolchain prune }
+    update: {|| rustup update }
+  }
+  {
+    name: gem
+    category: package-manager
+    detect: "^where gem"
+    clean: {|| gem cleanup }
+    prune: null
+    update: {|| gem update --system }
+  }
+  {
+    name: pip
+    category: package-manager
+    detect: "^where pip"
+    clean: {|| pip cache purge }
+    prune: null
+    update: {|| python -m pip install --upgrade pip }
+  }
 ]
