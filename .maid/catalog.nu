@@ -57,25 +57,9 @@ let MAID_CATALOG = [
     name: cargo
     category: toolchain
     detect: "^where cargo"
-    clean: {||
-      let result = (^cargo clean gc --max-download-age=30days | complete)
-      if ($result.exit_code != 0) {
-        print "cargo: native GC not available, using manual cleanup"
-        let cargo_home = ($env.USERPROFILE | path join ".cargo")
-        let max_age = (date now) - 30day
-        let cache_dir = ($cargo_home | path join "registry" "cache")
-        if ($cache_dir | path exists) {
-          ls ($cache_dir | path join "**" "*")
-          | where type == file and modified < $max_age
-          | each {|file|
-            print $"Removing: ($file.name)"
-            rm --force $file.name
-          }
-        }
-      }
-    }
+    clean: {|| cargo cache --autoclean }
     prune: null
-    update: null
+    update: {|| cargo install-update -a }
   }
   {
     name: dotnet
