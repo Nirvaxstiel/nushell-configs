@@ -12,6 +12,9 @@ maid -p <name>       prune a tool
 maid -p -a           prune all
 maid -u <name>       update + clean a tool
 maid -u -a           update + clean all
+maid -e <name>       audit a tool (security/vulns)
+maid -e <name> -f    audit + auto-fix vulnerabilities
+maid -e -a           audit all
 maid -a              clean + prune all
 maid -r              probe for installed tools
 ```
@@ -28,13 +31,12 @@ Edit `.maid/catalog.nu`:
   clean:    {|| mytool cache clean }
   prune:    null
   update:   null
+  audit:    null
+  audit_fix: null
 }
 ```
 
 Then `maid -r` to register it.
-
-> [!NOTE]
-> Personal config — strip zoxide, oh-my-posh, and anything else before using if you don't have them
 
 ## Files
 
