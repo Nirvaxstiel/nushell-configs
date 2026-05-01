@@ -15,11 +15,16 @@ def maid-action [target: record, action: string] {
     _ => null,
   })
   if ($action_fn == null) { print $"($target.name): no ($action) command"; return }
-  print $"($target.name) ($action)..."
-  let result = (do $action_fn | complete)
-  if not ($result.stdout | is-empty) { print $result.stdout }
-  if not ($result.stderr | is-empty) { print $result.stderr }
-  if $result.exit_code != 0 { print $"($target.name): exit ($result.exit_code)" }
+  print $"($target.name): ($action)"
+  try {
+    do $action_fn | each {|line| print $line }
+  } catch {|e|
+    if ($e.msg | str contains "exit_code") {
+      print $"($target.name): command failed"
+    } else {
+      print $"($target.name): ($e.msg)"
+    }
+  }
 }
 
 def maid [
