@@ -13,6 +13,7 @@ def maid-action [target: record, action: string] {
     "prune" => $target.prune,
     "update" => $target.update,
     "audit" => $target.audit,
+    "audit_fix" => $target.audit_fix,
     _ => null,
   })
   if ($action_fn == null) { print $"($target.name): no ($action) command"; return }
@@ -33,6 +34,7 @@ def maid [
   --prune(-p)
   --update(-u)
   --audit(-e)
+  --fix(-f)
   --all(-a)
   --list(-l)
   --probe(-r)
@@ -93,9 +95,12 @@ def maid [
   if $audit {
     if ($target | is-empty) { print "specify target or use -e -a"; return }
     if $all { maid-audit-all $targets; return }
-    maid-run $target "audit" $targets
+    let action = (if $fix { "audit_fix" } else { "audit" })
+    maid-run $target $action $targets
     return
   }
+
+  if $fix and not $audit { print "--fix requires --audit (-e)"; maid-help; return }
 
   maid-help
 }
@@ -111,6 +116,7 @@ def maid-help [] {
   print "  maid -u <name>       update + clean a tool"
   print "  maid -u -a           update + clean all"
   print "  maid -e <name>       audit a tool (security/vulns)"
+  print "  maid -e <name> -f    audit + auto-fix vulnerabilities"
   print "  maid -e -a           audit all"
   print "  maid -a              clean + prune all"
   print ""
