@@ -6,6 +6,7 @@ let MAID_CATALOG = [
     clean: {|| bun cache clean --force }
     prune: null
     update: {|| bun upgrade }
+    audit: {|| bun audit }
   }
   {
     name: npm
@@ -14,6 +15,7 @@ let MAID_CATALOG = [
     clean: {|| npm cache clean --force }
     prune: null
     update: {|| npm update -g }
+    audit: {|| npm audit }
   }
   {
     name: pnpm
@@ -22,6 +24,7 @@ let MAID_CATALOG = [
     clean: null
     prune: {|| pnpm store prune }
     update: {|| pnpm up -g }
+    audit: {|| pnpm audit }
   }
   {
     name: uv

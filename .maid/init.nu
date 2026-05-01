@@ -12,6 +12,7 @@ def maid-action [target: record, action: string] {
     "clean" => $target.clean,
     "prune" => $target.prune,
     "update" => $target.update,
+    "audit" => $target.audit,
     _ => null,
   })
   if ($action_fn == null) { print $"($target.name): no ($action) command"; return }
@@ -30,9 +31,10 @@ def maid-action [target: record, action: string] {
 def maid [
   --clean(-c)
   --prune(-p)
+  --update(-u)
+  --audit(-e)
   --all(-a)
   --list(-l)
-  --update(-u)
   --probe(-r)
   target?: string
 ] {
@@ -48,7 +50,7 @@ def maid [
   }
 
   if $list {
-    print "actions: c (clean)  p (prune)  u (update)  a (clean+prune all)"
+    print "actions: c (clean)  p (prune)  u (update)  e (audit)  a (clean+prune all)"
     print ""
     if not ($targets | where $it.clean != null | is-empty) {
       print "clean targets:"
@@ -57,6 +59,10 @@ def maid [
     if not ($targets | where $it.prune != null | is-empty) {
       print "prune targets:"
       $targets | where $it.prune != null | get name | each {|n| print $"  ($n)"}
+    }
+    if not ($targets | where $it.audit != null | is-empty) {
+      print "audit targets:"
+      $targets | where $it.audit != null | get name | each {|n| print $"  ($n)"}
     }
     return
   }
@@ -84,6 +90,13 @@ def maid [
     return
   }
 
+  if $audit {
+    if ($target | is-empty) { print "specify target or use -e -a"; return }
+    if $all { maid-audit-all $targets; return }
+    maid-run $target "audit" $targets
+    return
+  }
+
   maid-help
 }
 
@@ -97,6 +110,8 @@ def maid-help [] {
   print "  maid -p -a           prune all"
   print "  maid -u <name>       update + clean a tool"
   print "  maid -u -a           update + clean all"
+  print "  maid -e <name>       audit a tool (security/vulns)"
+  print "  maid -e -a           audit all"
   print "  maid -a              clean + prune all"
   print ""
   print "  maid -r              probe for installed tools"
@@ -154,4 +169,11 @@ def maid-update-all [targets] {
     maid-action $t "update"
     if ($t.clean != null) { maid-action $t "clean" }
   }
+}
+
+def maid-audit-all [targets] {
+  let to_audit = ($targets | where $it.audit != null)
+  if ($to_audit | is-empty) { print "no targets have audit commands"; return }
+  print $"auditing (($to_audit | length)) target(s)..."
+  $to_audit | each {|t| maid-action $t "audit" }
 }
