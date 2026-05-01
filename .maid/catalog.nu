@@ -5,7 +5,7 @@ let MAID_CATALOG = [
     detect: "^where bun"
     clean: {|| bun cache clean --force }
     prune: null
-    update: null
+    update: {|| bun upgrade }
   }
   {
     name: npm
@@ -13,7 +13,7 @@ let MAID_CATALOG = [
     detect: "^where npm"
     clean: {|| npm cache clean --force }
     prune: null
-    update: null
+    update: {|| npm update -g }
   }
   {
     name: pnpm
@@ -21,7 +21,7 @@ let MAID_CATALOG = [
     detect: "^where pnpm"
     clean: null
     prune: {|| pnpm store prune }
-    update: null
+    update: {|| pnpm up -g }
   }
   {
     name: uv
@@ -29,7 +29,7 @@ let MAID_CATALOG = [
     detect: "^where uv"
     clean: {|| uv cache clean }
     prune: null
-    update: null
+    update: {|| uv self update }
   }
   {
     name: scoop
