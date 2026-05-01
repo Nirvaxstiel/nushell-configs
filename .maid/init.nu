@@ -7,6 +7,21 @@ def get-targets [] {
   $MAID_CATALOG | where {|t| $registered | any {|n| $n == $t.name} }
 }
 
+def maid-action [target: record, action: string] {
+  let action_fn = (match $action {
+    "clean" => $target.clean,
+    "prune" => $target.prune,
+    "update" => $target.update,
+    _ => null,
+  })
+  if ($action_fn == null) { print $"($target.name): no ($action) command"; return }
+  print $"($target.name) ($action)..."
+  let result = (do $action_fn | complete)
+  if not ($result.stdout | is-empty) { print $result.stdout }
+  if not ($result.stderr | is-empty) { print $result.stderr }
+  if $result.exit_code != 0 { print $"($target.name): exit ($result.exit_code)" }
+}
+
 def maid [
   --clean(-c)
   --prune(-p)
@@ -98,57 +113,40 @@ def maid-probe [] {
   print "registry updated."
 }
 
+def maid-run [target: string, action: string, targets] {
+  let t = ($targets | where $it.name == $target | first)
+  if ($t == null) { print $"unknown target: ($target)"; return }
+  maid-action $t $action
+}
+
 def maid-clean-all [targets] {
   let to_clean = ($targets | where $it.clean != null)
   if ($to_clean | is-empty) { print "no clean targets"; return }
-  print $"cleaning (($to_clean | length)) target..."
-  $to_clean | each {|t|
-    print $"  ($t.name)..."
-    try { ($t.clean); print $"  ($t.name) done" } catch {|e| print $"  ($t.name) error: ($e.msg)" }
-  }
+  print $"cleaning (($to_clean | length)) target(s)..."
+  $to_clean | each {|t| maid-action $t "clean" }
 }
 
 def maid-prune-all [targets] {
   let to_prune = ($targets | where $it.prune != null)
   if ($to_prune | is-empty) { print "no prune targets"; return }
-  print $"pruning (($to_prune | length)) target..."
-  $to_prune | each {|t|
-    print $"  ($t.name)..."
-    try { ($t.prune); print $"  ($t.name) done" } catch {|e| print $"  ($t.name) error: ($e.msg)" }
-  }
-}
-
-def maid-run [target: string, action: string, targets] {
-  let t = ($targets | where $it.name == $target | first)
-  if ($t == null) { print $"unknown target: ($target)"; return }
-  let action_fn = (if $action == "clean" { $t.clean } else { $t.prune })
-  if ($action_fn == null) { print $"($t.name) does not support ($action)"; return }
-  print $"($action) ($t.name)..."
-  try { ($action_fn); print $"($t.name) done" } catch {|e| print $"($t.name) error: ($e.msg)" }
+  print $"pruning (($to_prune | length)) target(s)..."
+  $to_prune | each {|t| maid-action $t "prune" }
 }
 
 def maid-update [target: string, targets] {
   let t = ($targets | where $it.name == $target | first)
   if ($t == null) { print $"unknown target: ($target)"; return }
-  if ($t.update == null) { print $"($t.name) has no update command"; return }
-  print $"updating ($t.name)..."
-  try {
-    ($t.update)
-    if ($t.clean != null) { print $"cleaning ($t.name)..."; ($t.clean) }
-    print $"($t.name) done"
-  } catch {|e| print $"($t.name) error: ($e.msg)" }
+  if ($t.update == null) { print $"($t.name): no update command"; return }
+  maid-action $t "update"
+  if ($t.clean != null) { maid-action $t "clean" }
 }
 
 def maid-update-all [targets] {
   let to_update = ($targets | where $it.update != null)
   if ($to_update | is-empty) { print "no targets have update commands"; return }
-  print $"updating (($to_update | length)) target..."
+  print $"updating (($to_update | length)) target(s)..."
   $to_update | each {|t|
-    print $"  ($t.name)..."
-    try {
-      ($t.update)
-      if ($t.clean != null) { print $"  cleaning ($t.name)..."; ($t.clean) }
-      print $"  ($t.name) done"
-    } catch {|e| print $"  ($t.name) error: ($e.msg)" }
+    maid-action $t "update"
+    if ($t.clean != null) { maid-action $t "clean" }
   }
 }
