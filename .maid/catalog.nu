@@ -36,6 +36,8 @@ let MAID_CATALOG = [
     clean: {|| uv cache clean }
     prune: null
     update: {|| uv self update }
+    audit: null
+    audit_fix: null
   }
   {
     name: scoop
@@ -50,6 +52,8 @@ let MAID_CATALOG = [
       scoop update
       scoop update -a
     }
+    audit: null
+    audit_fix: null
   }
   {
     name: choco
@@ -58,6 +62,8 @@ let MAID_CATALOG = [
     clean: {|| ^choco cache clear --force }
     prune: null
     update: {|| ^choco upgrade all -y }
+    audit: null
+    audit_fix: null
   }
   {
     name: cargo
@@ -66,6 +72,8 @@ let MAID_CATALOG = [
     clean: {|| cargo cache --autoclean }
     prune: null
     update: {|| cargo install-update -a }
+    audit: null
+    audit_fix: null
   }
   {
     name: dotnet
@@ -74,6 +82,8 @@ let MAID_CATALOG = [
     clean: {|| ^dotnet nuget locals all --clear }
     prune: null
     update: {|| ^dotnet tool update --all --global }
+    audit: null
+    audit_fix: null
   }
   {
     name: rustup
@@ -82,6 +92,8 @@ let MAID_CATALOG = [
     clean: null
     prune: {|| rustup toolchain prune }
     update: {|| rustup update }
+    audit: null
+    audit_fix: null
   }
   {
     name: gem
@@ -90,6 +102,8 @@ let MAID_CATALOG = [
     clean: {|| gem cleanup }
     prune: null
     update: {|| gem update --system }
+    audit: null
+    audit_fix: null
   }
   {
     name: pip
@@ -98,5 +112,8 @@ let MAID_CATALOG = [
     clean: {|| pip cache purge }
     prune: null
     update: {|| python -m pip install --upgrade pip }
+    audit: null
+    audit_fix: null
+  }
   }
 ]
