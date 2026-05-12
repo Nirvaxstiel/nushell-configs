@@ -115,5 +115,49 @@ let MAID_CATALOG = [
     audit: null
     audit_fix: null
   }
+  {
+    name: docker
+    category: container
+    detect: "^where docker"
+    clean: {||
+      ^docker builder prune -f --filter type!=exec.cachemount
+      ^docker image prune -f
+      ^docker image prune -f --filter "dangling=true"
+    }
+    prune: {||
+      ^docker container prune -f
+      ^docker network prune -f
+      ^docker volume prune -f
+    }
+    update: {|| ^docker pull nousresearch/hermes-agent:latest }
+    audit: null
+    audit_fix: null
+  }
+  {
+    name: hermes
+    category: agent
+    detect: {||
+      let has_docker = (^where docker | is-not-empty)
+      let has_dockerfile = ((^pwd | path expand) | path join "hermes" "Dockerfile" | path exists)
+      if $has_docker and $has_dockerfile { "hermes/docker" } else { null }
+    }
+    clean: {||
+      hermes sessions prune
+      hermes checkpoints prune --retention-days 7
+      ^docker image rm hermes-dev 2>/dev/null; null
+    }
+    prune: {||
+      hermes checkpoints prune
+    }
+    update: {||
+      hermes update
+      hermes-build --pull --no-prune
+    }
+    audit: {||
+      hermes doctor
+    }
+    audit_fix: {||
+      hermes doctor --fix
+    }
   }
 ]

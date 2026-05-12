@@ -70,3 +70,17 @@ hermes-dev doctor --fix
 - .NET SDK 10.0 + ASP.NET 10.0/8.0 runtimes
 - `roslyn-language-server` (dotnet tool)
 - `graphify` (uv tool, hermes platform)
+
+## Maid Cleanup
+
+Registered in `.maid/catalog.nu` — run `maid -r` to pick them up.
+
+```nu
+maid -c -a              # clean + prune everything
+maid -c docker          # prune dangling images, builder cache
+maid -c hermes          # prune old sessions + checkpoints
+maid -u hermes         # update hermes agent + clean
+maid -e hermes -f      # doctor --fix
+maid -c hermes-img     # rm old hermes-dev image
+maid -u hermes-img     # rebuild hermes-dev with --pull --no-prune
+```
