@@ -20,9 +20,9 @@ def hermes-dev [
     let slug = (path-slug 4)
     let engine = get-container-engine --podman
 
-    let DATA_VOL = $"-v ($env.USERPROFILE)/.hermes:/opt/data"
-    let PROJECT_VOL = $"-v ($host_cwd)/.hermes:/home/user/projects/($dirname)"
-    let WORKDIR = "-w /home/user/projects/"
+    let DATA_VOL = ["-v" $"($env.USERPROFILE)/.hermes:/opt/data"]
+    let PROJECT_VOL = ["-v" $"($host_cwd):/home/user/projects/($dirname)"]
+    let WORKDIR = ["-w" "/home/user/projects/"]
 
     let dash_ports = if $command == $DASHBOARD {
         ["-p" "9119:9119" "-p" "8642:8642" "-e" "GATEWAY_HEALTH_URL=https://127.0.0.1:8642"]
@@ -42,7 +42,7 @@ def hermes-dev [
     let chat_fallback = if $profile and $command != "profile" { ["hermes" "-p" $slug "chat"] } else { [] }
     let flags = [...(if $tui { ["--tui"] } else { [] }) ...(if ($resume != null) { ["--resume" $resume] } else { [] })]
 
-    let cmd = [$engine "run" "--rm" "-it" $DATA_VOL $PROJECT_VOL $WORKDIR ...$dash_ports "hermes-dev" ...$hermes_args ...$chat_fallback ...$flags]
+    let cmd = [$engine "run" "--rm" "-it" ...$DATA_VOL ...$PROJECT_VOL ...$WORKDIR ...$dash_ports "hermes-dev" ...$hermes_args ...$chat_fallback ...$flags]
 
     _run-or-dry-run $cmd $dry_run
 }
