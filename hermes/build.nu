@@ -1,5 +1,8 @@
 source ../.common.nu
 source ./container.nu
+source ../lib/result.nu
+source ../lib/cmd.nu
+source ./spec.nu
 
 def hermes-build [
     --pull
@@ -7,11 +10,13 @@ def hermes-build [
     --no-prune
     --podman
 ] {
-    let engine = get-container-engine --podman
-    let build_cmd = [$engine "build" ...(if $pull { ["--pull"] } else { [] }) "-t" "hermes-dev" "."]
-    _run-or-dry-run $build_cmd $dry_run
+    let engine = (get-container-engine --podman)
+    let specs = (build-spec $engine --pull=$pull --no-prune=$no_prune)
 
-    if not $no_prune {
-        _run-or-dry-run [$engine "builder" "prune" "-f" "--filter" "type!=exec.cachemount"] $dry_run
-    }
+    let r1 = (_run-or-dry-run $specs.build $dry_run)
+    if (result-is-err $r1) { return $r1 }
+
+    if ($specs.prune | is-empty) { return $r1 }
+
+    _run-or-dry-run $specs.prune $dry_run | ignore
 }

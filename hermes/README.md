@@ -4,13 +4,33 @@
 
 ```
 nushell/
-├── .common.nu          # Shared utils: _run-or-dry-run, path-slug
-├── .hermes-agent.nu    # Entry point: sources run.nu + build.nu
+├── lib/
+│   ├── result.nu      # Result monad: ok/err/map/bind/is-ok/is-err/unwrap-or
+│   └── cmd.nu         # Pure docker-arg builders: flag/opt/args/build
+├── tests/
+│   ├── run.nu         # TAP-ish runner: `nu tests/run.nu`
+│   ├── harness.nu     # assert-equal/assert-true/assert-is-ok/assert-is-err
+│   ├── result_test.nu
+│   ├── cmd_test.nu
+│   ├── container_test.nu
+│   ├── hermes_spec_test.nu
+│   └── maid_test.nu
+├── .common.nu         # Shared utils: path-slug, _run-or-dry-run (-> Result)
+├── .hermes-agent.nu   # Entry point: sources run.nu + build.nu
+├── .maid/
+│   ├── core.nu        # Pure: get-targets, read-registry, maid-action (-> Result)
+│   ├── init.nu        # Command surface (maid, maid-regen, ...)
+│   ├── catalog.nu     # known tools + commands
+│   └── registry.json  # tools this machine has
 └── hermes/
-    ├── Dockerfile      # Custom image (dotnet, roslyn-ls, graphify)
-    ├── build.nu        # hermes-build [--pull] [--dry-run] [--no-prune]
-    └── run.nu          # hermes-dev, hermes-panic
+    ├── spec.nu        # PURE arg-vector builders: dev-spec/panic-spec/build-spec
+    ├── run.nu         # hermes-dev, hermes-panic (spec -> _run-or-dry-run)
+    ├── build.nu       # hermes-build
+    ├── container.nu   # get-container-engine (pure)
+    ├── Dockerfile
+    └── README.md
 ```
+
 
 ## Quick Start
 
@@ -84,3 +104,20 @@ maid -e hermes -f      # doctor --fix
 maid -c hermes-img     # rm old hermes-dev image
 maid -u hermes-img     # rebuild hermes-dev with --pull --no-prune
 ```
+
+## Testing
+
+Every domain is split into a **pure spec builder** (no side effects) and a thin
+**effect layer** (execution), so it is unit-testable without invoking docker.
+
+```nu
+nu tests/run.nu        # runs all domains, prints TAP-style summary
+```
+
+| Suite | Covers |
+|-------|--------|
+| `result_test.nu` | Result monad: `ok`/`err`/`map`/`bind`/`unwrap-or` |
+| `cmd_test.nu` | arg builders: `flag`/`opt`/`args`/`build` |
+| `container_test.nu` | `get-container-engine` resolution |
+| `hermes_spec_test.nu` | `dev-spec`/`panic-spec`/`build-spec` arg vectors |
+| `maid_test.nu` | `get-targets` intersection, `maid-action` Result outcomes |
