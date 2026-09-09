@@ -1,0 +1,1 @@
+source deepseek/run.nu

@@ -8,14 +8,29 @@ def path-slug [len: int = 4] {
     $"($base)-($id)"
 }
 
+def os-kind [] {
+    match ($nu.os-info.name | str lowercase) {
+        "windows" => "windows"
+        "linux" => "unix"
+        "macos" => "unix"
+        _ => "unknown"
+    }
+}
+
+def home-dir [] {
+    match (os-kind) {
+        "windows" => $env.USERPROFILE
+        "unix" => $env.HOME
+        _ => $env.HOME
+    }
+}
+
 def _run-or-dry-run [cmd: list<string>, dry_run: bool] {
     print ""
     print ""
     print ($cmd | str join " ")
     print ""
-
     if $dry_run { return (ok $cmd) }
-
     try {
         ^$cmd.0 ...($cmd | skip 1)
         ok $cmd

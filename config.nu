@@ -8,6 +8,8 @@ source ($nu.data-dir | path join vendor/autoload/oh-my-posh.nu)
 source ($nu.data-dir | path join ".maid/init.nu")
 
 source .common.nu
-source .fastfetch.nu
+# source .fastfetch.nu
 source .fzf.nu
 source .hermes-agent.nu
+source .deepseek-harness.nu
+source .path.nu
