@@ -14,20 +14,25 @@ RUN apt-get update && apt-get install -y \
     socat \
     && rm -rf /var/lib/apt/lists/*
 
+ARG DSH_COMMIT
+
 WORKDIR /opt
 
-# TODO: pin this to a known-good commit.
-RUN git clone https://github.com/deepseek-ai/deepseek-harness.git \
+RUN test -n "$DSH_COMMIT" \
+    && git clone --filter=blob:none --no-checkout \
+        https://github.com/deepseek-ai/deepseek-harness.git \
+        deepseek-harness \
     && cd deepseek-harness \
-    && pnpm install \
+    && git checkout "$DSH_COMMIT" \
+    && pnpm install --frozen-lockfile \
     && pnpm run build
 
 COPY docker/dsh-entrypoint.sh /usr/local/bin/dsh-entrypoint
+
 RUN chmod +x /usr/local/bin/dsh-entrypoint
 
 WORKDIR /workspace
 
-# 3081 is the externally reachable container-side proxy.
 EXPOSE 3081
 
 ENTRYPOINT ["/usr/local/bin/dsh-entrypoint"]

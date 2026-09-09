@@ -9,11 +9,14 @@ def dsh-port [] {
 def dsh-build-args [] {
     [
         "build"
+        "--build-arg"
+        $"DSH_COMMIT=(dsh-commit)"
         "-t"
-        (dsh-image)
+        "dsh-sandbox"
         "."
     ]
 }
+
 
 def dsh-run-args [] {
     [
@@ -29,12 +32,8 @@ def dsh-run-args [] {
     ]
 }
 
-def podman [args: list<string>] {
-    ^podman ...$args
-}
-
 def dsh-build [] {
-    podman (dsh-build-args)
+    ^podman ...(dsh-build-args)
 }
 
 def dsh-run [] {
@@ -44,4 +43,16 @@ def dsh-run [] {
 def dsh [] {
     dsh-build
     dsh-run
+}
+
+def dsh-repo [] {
+    "https://github.com/deepseek-ai/deepseek-harness.git"
+}
+
+def dsh-commit [] {
+    ^git ls-remote (dsh-repo) refs/heads/master
+    | lines
+    | first
+    | split row "\t"
+    | first
 }
