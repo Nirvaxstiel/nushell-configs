@@ -80,7 +80,10 @@ def build-spec [
     --pull
     --no-prune
 ] {
-    let build_cmd = (build (flag [$engine build] $pull "--pull") [-t hermes-dev .])
-    let prune_cmd = if $no_prune { [] } else { [$engine builder prune -f --filter type!=exec.cachemount] }
+    let dockerfile_path = $nu.data-dir | path join "hermes"
+    let build_cmd = (build (flag [$engine build] $pull "--pull") [-t hermes-dev $dockerfile_path])
+
+    let builder_filters = if $engine == "docker" {[--filter type!=exec.cachemount]}
+    let prune_cmd = if $no_prune { [] } else { [$engine builder prune -f ...$builder_filters] }
     { build: $build_cmd, prune: $prune_cmd }
 }
