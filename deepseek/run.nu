@@ -37,7 +37,7 @@ def dsh-build [] {
 }
 
 def dsh-run [] {
-    podman (dsh-run-args)
+    podman ...(dsh-run-args)
 }
 
 def dsh [] {
