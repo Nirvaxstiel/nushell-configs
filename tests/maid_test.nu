@@ -1,4 +1,5 @@
 source ../tests/harness.nu
+source ../.maid/init.nu
 
 # get-targets: pure intersection of catalog with registry.
 let maid_test = [
@@ -32,5 +33,9 @@ let maid_test = [
         let r = (maid-action $t "clean")
         assert-is-err $r
         assert-equal $r.err.kind "exec-failed"
+    } }
+    { name: "maid-run handles action failure", run: {
+        let t = { name: boom clean: {|| error make { msg: "boom" }} }
+        maid-run boom clean [$t]
     } }
 ]

@@ -1,8 +1,6 @@
 source ../.common.nu
-source ../lib/cmd.nu
 
-def dev-spec [
-    engine: string
+def build-hermes [
     command?: string
     extra_args: list<string> = []
     --profile (-p)
@@ -12,51 +10,56 @@ def dev-spec [
     --resume (-r): string
     --clone
     --clone-all
-    --podman
+] {
+    let profile_cmds = [use create delete show alias rename export import list]
+    let needs_profile_slug = ($command == "profile" and ($extra_args | any { |s| $s in $profile_cmds }))
+    let slug = if ($profile or $needs_profile_slug) {
+        path-slug 4
+    } else {
+        ""
+    }
+
+    let command_prefix = match $command {
+        "dashboard" => [dashboard -host 0.0.0.0]
+        null => []
+        _ => [$command]
+    }
+    let base_args = (build $command_prefix $extra_args)
+
+    let hermes_args = flag $base_args $insecure "--insecure"
+    let hermes_args = flag $hermes_args $fix "--fix"
+    let hermes_args = flag $hermes_args $needs_profile_slug $slug
+    let hermes_args = flag $hermes_args $clone "--clone"
+    let hermes_args = flag $hermes_args $clone_all "--clone-all"
+
+    let chat_fallback = if ($profile and $command != "profile") {
+        ["-p" $slug "chat"]
+    } else {
+        []
+    }
+    let tui_args = flag [] $tui "--tui"
+    let flags = opt $tui_args $resume "--resume"
+
+    build $hermes_args $chat_fallback $flags
+}
+
+def build-docker [
+    engine: string
+    --dashboard
 ] {
     let host_cwd = (pwd | path expand)
     let dirname = ($host_cwd | path basename)
-    let slug = (path-slug 4)
 
-    let DATA_VOL = [-v $"($env.USERPROFILE)/.hermes:/opt/data"]
-    let PROJECT_VOL = [-v $"($host_cwd):/home/user/projects/($dirname)"]
-    let WORKDIR = [-w /home/user/projects/]
-
-    let dash_ports = if $command == "dashboard" {
+    let data_vol = [-v $"(home-dir)/.hermes:/opt/data"]
+    let project_vol = [-v $"($host_cwd):/home/user/projects/($dirname)"]
+    let workdir = [-w /home/user/projects/]
+    let dashboard_args = if $dashboard {
         [-p 9119:9119 -p 8642:8642 -e GATEWAY_HEALTH_URL=https://127.0.0.1:8642]
-    } else { [] }
-
-    let PROFILE_CMDS = [use create delete show alias rename export import]
-    let needs_dirname = ($extra_args | any { |s| $s in $PROFILE_CMDS })
-
-    let base_args = match $command {
-        "dashboard" => (["dashboard" "-host" "0.0.0.0"] | append $extra_args)
-        "doctor" => (["doctor"] | append $extra_args)
-        "profile" => (["profile"] | append $extra_args)
-        null => $extra_args
-        _ => ([$command] | append $extra_args)
+    } else {
+        []
     }
 
-    let ha = flag $base_args $insecure "--insecure"
-    let ha = flag $ha $fix "--fix"
-    let ha = flag $ha $needs_dirname "--needs_dirname"
-    let ha = flag $ha $clone "--clone"
-    let hermes_args = flag $ha $clone_all "--clone-all"
-
-    let chat_fallback = if ($profile and $command != "profile") { ["hermes" "-p" $slug "chat"] } else { [] }
-    let f0 = flag [] $tui "--tui"
-    let flags = opt $f0 $resume "--resume"
-
-    [$engine run --rm -it]
-        | append $DATA_VOL
-        | append $PROJECT_VOL
-        | append $WORKDIR
-        | append $dash_ports
-        | append [hermes-dev]
-        | append $hermes_args
-        | append $chat_fallback
-        | append $flags
-        | flatten
+    build [$engine run --rm -it] $data_vol $project_vol $workdir $dashboard_args [hermes-dev]
 }
 
 def panic-spec [
@@ -64,11 +67,10 @@ def panic-spec [
     command?: string
     --fix
     --tui
-    --podman
 ] {
-    let data_vol = [-v $"($env.USERPROFILE)/.hermes:/opt/data"]
-    let base = ([run --rm -it] | append $data_vol | append [nousresearch/hermes-agent])
-    let with_cmd = if ($command | is-not-empty) { $base | append $command } else { $base }
+    let data_vol = [-v $"(home-dir)/.hermes:/opt/data"]
+    let base = (build [$engine run --rm -it] $data_vol [nousresearch/hermes-agent])
+    let with_cmd = (flag $base ($command | is-not-empty) ($command | default ""))
     let p0 = flag $with_cmd $fix "--fix"
     flag $p0 $tui "--tui"
 }
@@ -77,10 +79,8 @@ def build-spec [
     engine: string
     --pull
     --no-prune
-    --podman
 ] {
-    let b0 = flag [$engine build] $pull "--pull"
-    let build_cmd = ($b0 | append [-t hermes-dev .] | flatten)
+    let build_cmd = (build (flag [$engine build] $pull "--pull") [-t hermes-dev .])
     let prune_cmd = if $no_prune { [] } else { [$engine builder prune -f --filter type!=exec.cachemount] }
     { build: $build_cmd, prune: $prune_cmd }
 }

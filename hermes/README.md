@@ -6,7 +6,7 @@
 nushell/
 ├── lib/
 │   ├── result.nu      # Result monad: ok/err/map/bind/is-ok/is-err/unwrap-or
-│   └── cmd.nu         # Pure docker-arg builders: flag/opt/args/build
+│   └── cmd.nu         # Pure argument builders: flag/opt/build
 ├── tests/
 │   ├── run.nu         # TAP-ish runner: `nu tests/run.nu`
 │   ├── harness.nu     # assert-equal/assert-true/assert-is-ok/assert-is-err
@@ -23,8 +23,8 @@ nushell/
 │   ├── catalog.nu     # known tools + commands
 │   └── registry.json  # tools this machine has
 └── hermes/
-    ├── spec.nu        # PURE arg-vector builders: dev-spec/panic-spec/build-spec
-    ├── run.nu         # hermes-dev, hermes-panic (spec -> _run-or-dry-run)
+    ├── spec.nu        # PURE arg-vector builders: build-hermes/build-docker/panic-spec/build-spec
+    ├── run.nu         # hermes-dev, hermes-panic (builders -> _run-or-dry-run)
     ├── build.nu       # hermes-build
     ├── container.nu   # get-container-engine (pure)
     ├── Dockerfile
@@ -71,6 +71,7 @@ hermes-dev doctor --fix
 | `--resume`    | `-r`  | Resume session by name/ID             |
 | `--clone`     |       | Profile: clone config from active     |
 | `--clone-all` |       | Profile: clone all state              |
+| `--baremetal` |       | Run local Hermes without a container  |
 
 ## Volume Mounts
 
@@ -117,7 +118,7 @@ nu tests/run.nu        # runs all domains, prints TAP-style summary
 | Suite | Covers |
 |-------|--------|
 | `result_test.nu` | Result monad: `ok`/`err`/`map`/`bind`/`unwrap-or` |
-| `cmd_test.nu` | arg builders: `flag`/`opt`/`args`/`build` |
+| `cmd_test.nu` | arg builders: `flag`/`opt`/`build` |
 | `container_test.nu` | `get-container-engine` resolution |
-| `hermes_spec_test.nu` | `dev-spec`/`panic-spec`/`build-spec` arg vectors |
+| `hermes_spec_test.nu` | `build-hermes`/`build-docker`/`panic-spec`/`build-spec` arg vectors |
 | `maid_test.nu` | `get-targets` intersection, `maid-action` Result outcomes |

@@ -12,12 +12,18 @@ let container_test = [
         assert-equal (get-container-engine) podman
         $env.HERMES_CONTAINER_ENGINE = "docker"
         assert-equal (get-container-engine) docker
-        if $saved == "<none>" { hide-env HERMES_CONTAINER_ENGINE } else { $env.HERMES_CONTAINER_ENGINE = $saved }
+        if $saved == "<none>" { hide-env --ignore-errors HERMES_CONTAINER_ENGINE } else { $env.HERMES_CONTAINER_ENGINE = $saved }
+    } }
+    { name: "defaults to docker when unset", run: {
+        let saved = ($env.HERMES_CONTAINER_ENGINE? | default "<none>")
+        hide-env --ignore-errors HERMES_CONTAINER_ENGINE
+        assert-equal (get-container-engine) docker
+        if $saved == "<none>" { hide-env --ignore-errors HERMES_CONTAINER_ENGINE } else { $env.HERMES_CONTAINER_ENGINE = $saved }
     } }
     { name: "defaults to docker when null", run: {
         let saved = ($env.HERMES_CONTAINER_ENGINE? | default "<none>")
         $env.HERMES_CONTAINER_ENGINE = null
         assert-equal (get-container-engine) docker
-        if $saved == "<none>" { hide-env HERMES_CONTAINER_ENGINE } else { $env.HERMES_CONTAINER_ENGINE = $saved }
+        if $saved == "<none>" { hide-env --ignore-errors HERMES_CONTAINER_ENGINE } else { $env.HERMES_CONTAINER_ENGINE = $saved }
     } }
 ]

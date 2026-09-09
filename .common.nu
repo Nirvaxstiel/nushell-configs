@@ -20,7 +20,6 @@ def os-kind [] {
 def home-dir [] {
     match (os-kind) {
         "windows" => $env.USERPROFILE
-        "unix" => $env.HOME
         _ => $env.HOME
     }
 }

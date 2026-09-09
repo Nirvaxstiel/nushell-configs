@@ -100,7 +100,7 @@ def maid-run [target: string, action: string, targets: list<record>] {
     if ($t == null) { print $"unknown target: ($target)"; return }
     let res = (maid-action $t $action)
     if (result-is-err $res) {
-        let e = (unwrap-or $res null)
+        let e = $res.err
         if $e.kind == "exec-failed" { print $"($e.target): command failed" }
     }
 }
@@ -155,16 +155,20 @@ def maid-list [targets: list<record>] {
     print ""
     print "actions: c (clean)  p (prune)  u (update)  e (audit)  a (clean+prune all)"
     print ""
-    if not ($targets | where { |t| $t.clean? | is-not-empty } | is-empty) {
+    let clean_targets = ($targets | where { |t| $t.clean? | is-not-empty })
+    let prune_targets = ($targets | where { |t| $t.prune? | is-not-empty })
+    let audit_targets = ($targets | where { |t| $t.audit? | is-not-empty })
+
+    if ($clean_targets | is-not-empty) {
         print "clean targets:"
-        $targets | where { |t| $t.clean? | is-not-empty } | get name | each { |n| print $"  ($n)" }
+        $clean_targets | get name | each { |n| print $"  ($n)" }
     }
-    if not ($targets | where { |t| $t.prune? | is-not-empty } | is-empty) {
+    if ($prune_targets | is-not-empty) {
         print "prune targets:"
-        $targets | where { |t| $t.prune? | is-not-empty } | get name | each { |n| print $"  ($n)" }
+        $prune_targets | get name | each { |n| print $"  ($n)" }
     }
-    if not ($targets | where { |t| $t.audit? | is-not-empty } | is-empty) {
+    if ($audit_targets | is-not-empty) {
         print "audit targets:"
-        $targets | where { |t| $t.audit? | is-not-empty } | get name | each { |n| print $"  ($n)" }
+        $audit_targets | get name | each { |n| print $"  ($n)" }
     }
 }
