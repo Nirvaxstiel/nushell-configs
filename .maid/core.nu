@@ -1,6 +1,6 @@
 source ../lib/result.nu
 
-const MAID_DIR = ($nu.data-dir | path join ".maid")
+const MAID_DIR = ($nu.default-config-dir | path join ".maid")
 source ($MAID_DIR | path join "catalog.nu")
 
 const REGISTRY_FILE = ($MAID_DIR | path join "registry.json")

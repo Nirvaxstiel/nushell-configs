@@ -138,7 +138,7 @@ let MAID_CATALOG = [
     category: agent
     detect: {||
       let has_docker = (which docker | is-not-empty)
-      let has_dockerfile = (($nu.data-dir | path join "hermes" "Dockerfile") | path exists)
+      let has_dockerfile = (($nu.default-config-dir | path join "hermes" "Dockerfile") | path exists)
       if $has_docker and $has_dockerfile { "hermes/docker" } else { null }
     }
     clean: {||
