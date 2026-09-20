@@ -1,5 +1,5 @@
-source ./lib/result.nu
-source ./lib/cmd.nu
+source ($nu.default-config-dir | path join "lib" "result.nu")
+source ($nu.default-config-dir | path join "lib" "cmd.nu")
 
 def path-slug [len: int = 4] {
     let p = pwd | path expand

@@ -1,5 +1,5 @@
-source ../lib/result.nu
-source ./core.nu
+source ($nu.default-config-dir | path join "lib" "result.nu")
+source ($nu.default-config-dir | path join ".maid" "core.nu")
 
 def maid [
     --clean(-c)
@@ -99,49 +99,74 @@ def maid-run [target: string, action: string, targets: list<record>] {
     let t = ($targets | where { |it| $it.name == $target } | first)
     if ($t == null) { print $"unknown target: ($target)"; return }
     let res = (maid-action $t $action)
-    if (result-is-err $res) {
-        let e = $res.err
-        if $e.kind == "exec-failed" { print $"($e.target): command failed" }
+    maid-report-failures [$res]
+}
+
+def maid-report-failures [results: list<record>] {
+    let failures = ($results | where { |result| result-is-err $result })
+    if ($failures | is-empty) { return }
+    print "failures:"
+    for result in $failures {
+        let failure = $result.error
+        let detail = ($failure.msg? | default $failure.kind)
+        print $"  ($failure.target) ($failure.action): ($detail)"
     }
 }
 
 def maid-clean-all [targets: list<record>] {
     let to_clean = ($targets | where { |t| $t.clean? | is-not-empty })
     if ($to_clean | is-empty) { print "no clean targets"; return }
-    print $"cleaning (($to_clean | length)) target(s)..."
-    $to_clean | each { |t| maid-action $t "clean" | ignore }
+    print $"cleaning (($to_clean | length)) targets..."
+    let results = ($to_clean | each { |t| maid-action $t "clean" })
+    maid-report-failures $results
 }
 
 def maid-prune-all [targets: list<record>] {
     let to_prune = ($targets | where { |t| $t.prune? | is-not-empty })
     if ($to_prune | is-empty) { print "no prune targets"; return }
-    print $"pruning (($to_prune | length)) target(s)..."
-    $to_prune | each { |t| maid-action $t "prune" | ignore }
+    print $"pruning (($to_prune | length)) targets..."
+    let results = ($to_prune | each { |t| maid-action $t "prune" })
+    maid-report-failures $results
 }
 
 def maid-update [target: string, targets: list<record>] {
     let t = ($targets | where { |it| $it.name == $target } | first)
     if ($t == null) { print $"unknown target: ($target)"; return }
     if not ($t.update? | is-not-empty) { print $"($t.name): no update command"; return }
-    maid-action $t "update" | ignore
-    if ($t.clean? | is-not-empty) { maid-action $t "clean" | ignore }
+    let update_result = (maid-action $t "update")
+    if (result-is-err $update_result) {
+        maid-report-failures [$update_result]
+        return
+    }
+    if ($t.clean? | is-not-empty) {
+        let clean_result = (maid-action $t "clean")
+        maid-report-failures [$clean_result]
+    }
 }
 
 def maid-update-all [targets: list<record>] {
     let to_update = ($targets | where { |t| $t.update? | is-not-empty })
     if ($to_update | is-empty) { print "no targets have update commands"; return }
-    print $"updating (($to_update | length)) target(s)..."
-    $to_update | each { |t|
-        maid-action $t "update" | ignore
-        if ($t.clean? | is-not-empty) { maid-action $t "clean" | ignore }
-    }
+    print $"updating (($to_update | length)) targets..."
+    let results = ($to_update | each { |t|
+        let update_result = (maid-action $t "update")
+        if (result-is-err $update_result) {
+            $update_result
+        } else if ($t.clean? | is-not-empty) {
+            maid-action $t "clean"
+        } else {
+            $update_result
+        }
+    })
+    maid-report-failures $results
 }
 
 def maid-audit-all [targets: list<record>] {
     let to_audit = ($targets | where { |t| $t.audit? | is-not-empty })
     if ($to_audit | is-empty) { print "no targets have audit commands"; return }
-    print $"auditing (($to_audit | length)) target(s)..."
-    $to_audit | each { |t| maid-action $t "audit" | ignore }
+    print $"auditing (($to_audit | length)) targets..."
+    let results = ($to_audit | each { |t| maid-action $t "audit" })
+    maid-report-failures $results
 }
 
 def maid-list [targets: list<record>] {

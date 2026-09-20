@@ -16,9 +16,9 @@ def assert-true [cond: bool] {
 }
 
 def assert-is-ok [r: record] {
-    if not ($r.ok == true) { error make { msg: $"assert-is-ok FAILED: ($r | to nuon)" } }
+    if not (result-is-ok $r) { error make { msg: $"assert-is-ok FAILED: ($r | to nuon)" } }
 }
 
 def assert-is-err [r: record] {
-    if not ($r.ok == false) { error make { msg: $"assert-is-err FAILED: ($r | to nuon)" } }
+    if not (result-is-err $r) { error make { msg: $"assert-is-err FAILED: ($r | to nuon)" } }
 }

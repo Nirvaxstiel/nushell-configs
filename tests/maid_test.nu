@@ -20,19 +20,19 @@ let maid_test = [
         let t = { name: demo clean: {|| "cleaned" } }
         let r = (maid-action $t "clean")
         assert-is-ok $r
-        assert-equal $r.val.target demo
+        assert-equal $r.value.target demo
     } }
     { name: "maid-action errs when action missing", run: {
         let t = { name: demo clean: null }
         let r = (maid-action $t "clean")
         assert-is-err $r
-        assert-equal $r.err.kind "no-action"
+        assert-equal $r.error.kind "no-action"
     } }
     { name: "maid-action errs on exec failure", run: {
         let t = { name: boom clean: {|| ^false } }
         let r = (maid-action $t "clean")
         assert-is-err $r
-        assert-equal $r.err.kind "exec-failed"
+        assert-equal $r.error.kind "exec-failed"
     } }
     { name: "maid-run handles action failure", run: {
         let t = { name: boom clean: {|| error make { msg: "boom" }} }

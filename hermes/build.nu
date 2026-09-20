@@ -1,6 +1,6 @@
-source ../.common.nu
-source ./container.nu
-source ./spec.nu
+source ($nu.default-config-dir | path join ".common.nu")
+source ($nu.default-config-dir | path join "hermes" "container.nu")
+source ($nu.default-config-dir | path join "hermes" "spec.nu")
 
 def hermes-build [
     --pull

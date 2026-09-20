@@ -1,4 +1,4 @@
-source ../lib/result.nu
+source ($nu.default-config-dir | path join "lib" "result.nu")
 
 const MAID_DIR = ($nu.default-config-dir | path join ".maid")
 source ($MAID_DIR | path join "catalog.nu")
@@ -6,7 +6,7 @@ source ($MAID_DIR | path join "catalog.nu")
 const REGISTRY_FILE = ($MAID_DIR | path join "registry.json")
 
 def read-registry [] {
-    try { open $REGISTRY_FILE } catch { [] }
+    if ($REGISTRY_FILE | path exists) { open $REGISTRY_FILE } else { [] }
 }
 
 def get-targets [catalog: list<record>, registry: list<record>] {

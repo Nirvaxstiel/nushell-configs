@@ -1,6 +1,6 @@
-source ../.common.nu
-source ./container.nu
-source ./spec.nu
+source ($nu.default-config-dir | path join ".common.nu")
+source ($nu.default-config-dir | path join "hermes" "container.nu")
+source ($nu.default-config-dir | path join "hermes" "spec.nu")
 
 def hermes-dev [
     command?: string
@@ -40,6 +40,6 @@ def hermes-panic [
     let spec = (panic-spec $engine $command --fix=$fix --tui=$tui)
     let res = (_run-or-dry-run $spec false)
     if (result-is-err $res) {
-        error make { msg: $"hermes-panic failed: ($res.err.msg)" }
+        error make { msg: $"hermes-panic failed: ($res.error.msg)" }
     }
 }

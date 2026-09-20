@@ -8,11 +8,12 @@ source ./harness.nu
 source ./result_test.nu
 source ./cmd_test.nu
 source ./container_test.nu
+source ./deepseek_test.nu
 source ./hermes_spec_test.nu
 source ./maid_test.nu
 
 # Flatten every domain's case list and run them, reporting a TAP-ish summary.
-let all = ($result_test ++ $cmd_test ++ $container_test ++ $hermes_spec_test ++ $maid_test)
+let all = ($result_test ++ $cmd_test ++ $container_test ++ $deepseek_test ++ $hermes_spec_test ++ $maid_test)
 
 let results = ($all | each { |case|
     try { do $case.run; { name: $case.name, ok: true } } catch { |e|

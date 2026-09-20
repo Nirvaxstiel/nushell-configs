@@ -38,6 +38,20 @@ Edit `.maid/catalog.nu`:
 
 Then `maid -r` to register it.
 
+## Nushell integrations
+
+`env.nu` only sets environment variables. Regenerate zoxide, Oh My Posh, and Carapace autoload files with:
+
+```nu
+nu-refresh-integrations
+```
+
+Restart Nushell after refresh. Generated files live in Nushell's vendor autoload directory and are not part of this repository. Vendor autoload files load in interactive startup; `nu -c` intentionally skips them.
+
+## DeepSeek harness
+
+`dsh` builds from a pinned commit. Set `DSH_COMMIT` to another full 40-character SHA when needed, or pass `dsh --latest` to explicitly resolve `master`.
+
 ## Files
 
 | File | Purpose |

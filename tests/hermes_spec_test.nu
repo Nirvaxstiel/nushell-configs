@@ -6,38 +6,45 @@ source ../tests/harness.nu
 let hermes_spec_test = [
     { name: "build-hermes auto-profile returns Hermes args", run: {
         let args = (build-hermes --profile)
-        assert-equal $args [-p $"nushell-(pwd | path expand | hash md5 | str substring 0..4)" chat]
+        assert-equal $args [-p (path-slug 4) chat]
     } }
     { name: "build-hermes dashboard --insecure", run: {
+        let bind_host = ([0 0 0 0] | str join ".")
         let args = (build-hermes "dashboard" [] --insecure)
-        assert-equal $args [dashboard -host 0.0.0.0 --insecure]
+        assert-equal $args [dashboard -host $bind_host --insecure]
     } }
     { name: "build-docker dashboard", run: {
+        let host_cwd = (pwd | path expand)
+        let dirname = ($host_cwd | path basename)
+        let loopback = ([127 0 0 1] | str join ".")
         let args = (build-docker docker --dashboard)
         assert-equal $args [
             docker run --rm -it
             -v $"(home-dir)/.hermes:/opt/data"
-            -v $"($env.PWD | path expand):/home/user/projects/nushell"
+            -v $"($host_cwd):/home/user/projects/($dirname)"
             -w /home/user/projects/
-            -p 9119:9119 -p 8642:8642 -e GATEWAY_HEALTH_URL=https://127.0.0.1:8642
+            "-p" $"($loopback):9119:9119" "-p" $"($loopback):8642:8642" "-e" $"GATEWAY_HEALTH_URL=https://($loopback):8642"
             hermes-dev
         ]
     } }
     { name: "build-docker no dashboard", run: {
+        let host_cwd = (pwd | path expand)
+        let dirname = ($host_cwd | path basename)
         let args = (build-docker docker)
         assert-equal $args [
             docker run --rm -it
             -v $"(home-dir)/.hermes:/opt/data"
-            -v $"($env.PWD | path expand):/home/user/projects/nushell"
+            -v $"($host_cwd):/home/user/projects/($dirname)"
             -w /home/user/projects/
             hermes-dev
         ]
     } }
     { name: "docker and Hermes builders compose", run: {
+        let bind_host = ([0 0 0 0] | str join ".")
         let docker_args = (build-docker docker --dashboard)
         let hermes_args = (build-hermes "dashboard" [] --insecure)
         let args = (build $docker_args $hermes_args)
-        assert-equal ($args | last 4) [dashboard -host 0.0.0.0 --insecure]
+        assert-equal ($args | last 4) [dashboard -host $bind_host --insecure]
         assert-equal ($args | first 2) [docker run]
     } }
     { name: "build-hermes no command", run: {
@@ -46,7 +53,7 @@ let hermes_spec_test = [
     } }
     { name: "build-hermes -p chat injects profile fallback", run: {
         let args = (build-hermes "chat" [] --profile)
-        assert-equal ($args | last 3) [-p $"nushell-(pwd | path expand | hash md5 | str substring 0..4)" chat]
+        assert-equal ($args | last 3) [-p (path-slug 4) chat]
     } }
     { name: "build-hermes ignores profile subcommands outside profile command", run: {
         assert-equal (build-hermes "chat" [use]) [chat use]
@@ -88,13 +95,15 @@ let hermes_spec_test = [
         assert-equal ($spec | last 3) [doctor --fix --tui]
     } }
     { name: "build-spec pull --no-prune", run: {
+        let dockerfile_path = ($nu.default-config-dir | path join "hermes")
         let s = (build-spec docker --pull --no-prune)
-        assert-equal $s.build [docker build --pull -t hermes-dev .]
+        assert-equal $s.build [docker build --pull -t hermes-dev $dockerfile_path]
         assert-true ($s.prune | is-empty)
     } }
     { name: "build-spec default includes prune", run: {
+        let dockerfile_path = ($nu.default-config-dir | path join "hermes")
         let s = (build-spec docker)
-        assert-equal $s.build [docker build -t hermes-dev .]
+        assert-equal $s.build [docker build -t hermes-dev $dockerfile_path]
         assert-equal $s.prune [docker builder prune -f --filter type!=exec.cachemount]
     } }
 ]

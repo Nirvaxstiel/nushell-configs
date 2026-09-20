@@ -35,11 +35,11 @@ nushell/
 ## Quick Start
 
 ```nu
-source .hermes-agent.nu
+source ($nu.default-config-dir | path join ".hermes-agent.nu")
 
-hermes-build --pull   # build docker image (run from nushell/ dir)
-hermes-dev -p         # interactive chat with auto profile
-hermes-dev --dry-run  # inspect command without running
+hermes-build --pull
+hermes-dev -p
+hermes-dev --dry-run
 ```
 
 ## Shared Utils (.common.nu)
@@ -106,6 +106,10 @@ maid -c hermes-img     # rm old hermes-dev image
 maid -u hermes-img     # rebuild hermes-dev with --pull --no-prune
 ```
 
+## DeepSeek harness
+
+`dsh` uses a pinned commit. Set `DSH_COMMIT` to another full 40-character SHA, or pass `dsh --latest` to explicitly resolve `master`.
+
 ## Testing
 
 Every domain is split into a **pure spec builder** (no side effects) and a thin
@@ -120,5 +124,6 @@ nu tests/run.nu        # runs all domains, prints TAP-style summary
 | `result_test.nu` | Result monad: `ok`/`err`/`map`/`bind`/`unwrap-or` |
 | `cmd_test.nu` | arg builders: `flag`/`opt`/`build` |
 | `container_test.nu` | `get-container-engine` resolution |
+| `deepseek_test.nu` | pinned commit selection and local port arguments |
 | `hermes_spec_test.nu` | `build-hermes`/`build-docker`/`panic-spec`/`build-spec` arg vectors |
 | `maid_test.nu` | `get-targets` intersection, `maid-action` Result outcomes |

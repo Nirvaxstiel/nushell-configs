@@ -1,27 +1,27 @@
-def ok [val?: any] {
-  { ok: true, val: $val, err: null }
+def ok [value: any] {
+  { kind: "ok", value: $value }
 }
 
-def err [e?: any] {
-  { ok: false, val: null, err: $e }
+def err [error: any] {
+  { kind: "err", error: $error }
 }
 
-def result-is-ok [r: record] {
-  $r.ok == true
+def result-is-ok [result: record] {
+  ($result.kind? | default "") == "ok"
 }
 
-def result-is-err [r: record] {
-  $r.ok == false
+def result-is-err [result: record] {
+  ($result.kind? | default "") == "err"
 }
 
-def map [r: record, fn: closure] {
-  if ($r.ok == true) { ok (do $fn $r.val) } else { $r }
+def map [result: record, fn: closure] {
+  if (result-is-ok $result) { ok (do $fn $result.value) } else { $result }
 }
 
-def bind [r: record, fn: closure] {
-  if ($r.ok == true) { do $fn $r.val } else { $r }
+def bind [result: record, fn: closure] {
+  if (result-is-ok $result) { do $fn $result.value } else { $result }
 }
 
-def unwrap-or [r: record, default: any] {
-  if ($r.ok == true) { $r.val } else { $default }
+def unwrap-or [result: record, default: any] {
+  if (result-is-ok $result) { $result.value } else { $default }
 }

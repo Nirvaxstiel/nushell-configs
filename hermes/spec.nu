@@ -1,4 +1,4 @@
-source ../.common.nu
+source ($nu.default-config-dir | path join ".common.nu")
 
 def build-hermes [
     command?: string
@@ -80,7 +80,7 @@ def build-spec [
     --pull
     --no-prune
 ] {
-    let dockerfile_path = $nu.data-dir | path join "hermes"
+    let dockerfile_path = $nu.default-config-dir | path join "hermes"
     let build_cmd = (build (flag [$engine build] $pull "--pull") [-t hermes-dev $dockerfile_path])
 
     let builder_filters = if $engine == "docker" {[--filter type!=exec.cachemount]}

@@ -1,15 +1,9 @@
 $env.config.show_banner = false
 $env.config.shell_integration."osc133" = false
-source $"($nu.cache-dir)/carapace.nu"
-source ($nu.data-dir | path join vendor/autoload/zoxide.nu)
-# I prefer oh-my-posh for now.
-source ($nu.data-dir | path join vendor/autoload/oh-my-posh.nu)
-# source ($nu.data-dir | path join vendor/autoload/starship.nu)
-source ($nu.default-config-dir | path join ".maid/init.nu")
-
-source .common.nu
-# source .fastfetch.nu
-source .fzf.nu
-source .hermes-agent.nu
-source .deepseek-harness.nu
-source .path.nu
+source ($nu.default-config-dir | path join ".common.nu")
+source ($nu.default-config-dir | path join ".integrations.nu")
+source ($nu.default-config-dir | path join ".maid" "init.nu")
+source ($nu.default-config-dir | path join ".fzf.nu")
+source ($nu.default-config-dir | path join ".hermes-agent.nu")
+source ($nu.default-config-dir | path join ".deepseek-harness.nu")
+source ($nu.default-config-dir | path join ".path.nu")
