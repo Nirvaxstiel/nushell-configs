@@ -48,6 +48,12 @@ nu-refresh-integrations
 
 Restart Nushell after refresh. Generated files live in Nushell's vendor autoload directory and are not part of this repository. Vendor autoload files load in interactive startup; `nu -c` intentionally skips them.
 
+## Nushell core plugins
+
+The release zip ships `nu_plugin_*.exe` next to `nu.exe` and registers none of them, and `plugin add` is a manual step. `config.nu` loads `.plugins.nu` and calls `nu-bootstrap-core-plugins`, which registers the allowlisted core plugins (`gstat`, `inc`, `polars`, `formats`, `query`) from the nu directory on the first launch after an install or upgrade, then prints a restart notice.
+
+The per-launch check is a `plugin list` comparison against the allowlist by resolved path, not by status: a plugin counts as usable only when its status is `loaded`/`running`, its recorded path resolves to the binary next to the current `nu.exe`, and that binary still exists on disk. A missing binary is reported by name instead of failing silently. `plugin.msgpackz` is generated machine state and is not tracked.
+
 ## DeepSeek harness
 
 `dsh` builds from a pinned commit. Set `DSH_COMMIT` to another full 40-character SHA when needed, or pass `dsh --latest` to explicitly resolve `master`.

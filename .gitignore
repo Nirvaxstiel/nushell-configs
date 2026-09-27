@@ -1,4 +1,5 @@
 /history.txt
 /vendor
+/plugin.msgpackz
 /.maid/registry.json
 **.DS_Store**

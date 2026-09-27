@@ -8,3 +8,5 @@ source ($nu.default-config-dir | path join ".hermes-agent.nu")
 source ($nu.default-config-dir | path join ".deepseek-harness.nu")
 source ($nu.default-config-dir | path join ".path.nu")
 source ($nu.default-config-dir | path join ".fastfetch.nu")
+source ($nu.default-config-dir | path join ".plugins.nu")
+nu-bootstrap-core-plugins
