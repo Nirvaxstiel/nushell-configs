@@ -40,13 +40,19 @@ Then `maid -r` to register it.
 
 ## Nushell integrations
 
-`env.nu` only sets environment variables. Regenerate zoxide, Oh My Posh, and Carapace autoload files with:
+`env.nu` only sets environment variables. Regenerate the zoxide and Oh My Posh autoload files with:
 
 ```nu
 nu-refresh-integrations
 ```
 
 Restart Nushell after refresh. Generated files live in Nushell's vendor autoload directory and are not part of this repository. Vendor autoload files load in interactive startup; `nu -c` intentionally skips them.
+
+## Carapace completions
+
+The completer lives in `.integrations.nu` instead of coming from `carapace _carapace nushell`. Carapace's generated template changes between versions and patching it rots silently; owning it also lets `carapace-exe` call the real binary behind the scoop shim, saving ~90 ms per Tab press. `completions.external.max_results` is raised from the default 100, which truncates real result sets (`git <TAB>` returns 167 entries).
+
+`env.nu` sets `CARAPACE_BRIDGES = "bash"` (fish, zsh, and inshellisense are not installed, so those bridges were inert), `CARAPACE_LENIENT`, and `CARAPACE_MATCH`.
 
 ## Nushell core plugins
 

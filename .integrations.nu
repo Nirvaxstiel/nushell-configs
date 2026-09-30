@@ -7,17 +7,14 @@ def patch-omp-nu [] {
     }
 }
 
-def patch-carapace-scoop-path []: string -> string {
-    let path = (which carapace | get 0?.path?)
-    if $path == null or $path !~ '(?i)[\\/]scoop[\\/]shims[\\/]' {
-        return $in
-    }
-    $in
-    | str replace --multiline --regex '^\$env\.Path = .*/carapace/bin"\)\r?\n\r?\n' ''
-    | str replace 'carapace $spans.0 nushell ...$spans
-  | from json' 'carapace $spans.0 nushell ...$spans
-  | from json
-  | if ($in | is-empty) { null } else { $in }'
+def carapace-exe [] {
+    let resolved = (which carapace | get 0?.path?)
+    if $resolved == null { return null }
+    let shim = ($resolved | str replace --regex '(?i)\.exe$' '.shim')
+    if not ($shim | path exists) { return $resolved }
+    let target = (open $shim | lines | parse 'path = "{path}"' | get 0?.path?)
+    if $target == null or not ($target | path exists) { return $resolved }
+    $target
 }
 
 def nu-refresh-integrations [] {
@@ -28,8 +25,27 @@ def nu-refresh-integrations [] {
     oh-my-posh init nu --config ~/.config/omp/ys.xtended.json --print
         | patch-omp-nu
         | save --force ($vendor_autoload_dir | path join "oh-my-posh.nu")
-    carapace _carapace nushell
-        | patch-carapace-scoop-path 
-        | save --force ($vendor_autoload_dir | path join "carapace.nu")
     print "integrations refreshed; restart Nushell to load them"
 }
+
+let carapace_exe = (carapace-exe)
+
+let carapace_completer = {|place|
+    if $carapace_exe == null or ($place.command | length) == 0 { return null }
+    let words = ($place.command | skip 1 | prepend ($place.command.0 | str replace --regex '\.exe$' ''))
+    with-env {
+        CARAPACE_SHELL: 'nushell'
+        CARAPACE_SHELL_ALIASES: (scope aliases | get name | uniq | str join "\n")
+        CARAPACE_SHELL_BUILTINS: (help commands | where category != "" | get name | each { split row " " | first } | uniq | str join "\n")
+        CARAPACE_SHELL_FUNCTIONS: (help commands | where category == "" | get name | each { split row " " | first } | uniq | str join "\n")
+        CARAPACE_SHELL_VARIABLES: (scope variables | get name | uniq | str join "\n")
+    } {
+        ^$carapace_exe $words.0 nushell ...$words | from json
+    }
+}
+
+$env.config = ($env.config | upsert completions.external {
+    enable: true
+    max_results: 1000
+    completer: $carapace_completer
+})

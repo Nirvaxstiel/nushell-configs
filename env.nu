@@ -1,1 +1,3 @@
-$env.CARAPACE_BRIDGES = "zsh,fish,bash,inshellisense"
+$env.CARAPACE_BRIDGES = "bash"
+$env.CARAPACE_LENIENT = "1"
+$env.CARAPACE_MATCH = "1"
