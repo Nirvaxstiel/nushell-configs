@@ -54,7 +54,7 @@ def build-docker [
     let project_vol = [-v $"($host_cwd):/home/user/projects/($dirname)"]
     let workdir = [-w /home/user/projects/]
     let dashboard_args = if $dashboard {
-        [-p 9119:9119 -p 8642:8642 -e GATEWAY_HEALTH_URL=https://127.0.0.1:8642]
+        [-p 127.0.0.1:9119:9119 -p 127.0.0.1:8642:8642 -e GATEWAY_HEALTH_URL=https://127.0.0.1:8642]
     } else {
         []
     }
