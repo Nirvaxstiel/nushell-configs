@@ -71,9 +71,15 @@ Two format rules come from carapace's loader, not from the docs: the file must l
 
 ## Nushell core plugins
 
-The release zip ships `nu_plugin_*.exe` next to `nu.exe` and registers none of them, and `plugin add` is a manual step. `config.nu` loads `.plugins.nu` and calls `nu-bootstrap-core-plugins`, which registers the allowlisted core plugins (`gstat`, `inc`, `polars`, `formats`, `query`) from the nu directory on the first launch after an install or upgrade, then prints a restart notice.
+The release zip ships `nu_plugin_*.exe` next to `nu.exe` and registers none of them. Registration is a user step by design: `plugin add` searches only `$env.NU_PLUGIN_DIRS` and never `PATH`, and nushell's own Homebrew and `.deb`/`.rpm` packages install the plugin binaries without registering them (nushell/nushell#15677). Startup config does not write the plugin registry here — the registry is user state, and a config that rewrites it turns a deliberate one-shot step into a per-launch side effect.
 
-The per-launch check is a `plugin list` comparison against the allowlist by resolved path, not by status: a plugin counts as usable only when its status is `loaded`/`running`, its recorded path resolves to the binary next to the current `nu.exe`, and that binary still exists on disk. A missing binary is reported by name instead of failing silently. `plugin.msgpackz` is generated machine state and is not tracked.
+Register once per nu upgrade with the helper the scoop manifest writes next to `nu.exe`, then restart:
+
+```nu
+nu ($nu.current-exe | path dirname | path join 'register-core-plugins.nu')
+```
+
+`scoop update nu` prints the same instruction and regenerates the helper from the core plugins it finds, warning if the bundled set changes. `plugin.msgpackz` is generated machine state and is not tracked.
 
 ## DeepSeek harness
 
