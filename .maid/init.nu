@@ -1,6 +1,10 @@
 source ($nu.default-config-dir | path join "lib" "result.nu")
 source ($nu.default-config-dir | path join ".maid" "core.nu")
 
+def maid-targets [] {
+    read-registry | get name
+}
+
 def maid [
     --clean(-c)
     --prune(-p)
@@ -10,7 +14,7 @@ def maid [
     --all(-a)
     --list(-l)
     --probe(-r)
-    target?: string
+    target?: string@maid-targets
 ] {
     if $probe { maid-regen; return }
 

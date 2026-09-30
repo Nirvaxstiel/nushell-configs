@@ -38,4 +38,11 @@ let maid_test = [
         let t = { name: boom clean: {|| error make { msg: "boom" }} }
         maid-run boom clean [$t]
     } }
+    { name: "maid target completes registered tools, not the whole catalog", run: {
+        let offered = ("maid -c " | commandline complete | sort)
+        let registry = (read-registry | get name | sort)
+        assert-true (($offered | length) > 0)
+        assert-equal $offered $registry
+        assert-true (($offered | length) < ($MAID_CATALOG | length))
+    } }
 ]
