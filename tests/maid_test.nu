@@ -38,11 +38,28 @@ let maid_test = [
         let t = { name: boom clean: {|| error make { msg: "boom" }} }
         maid-run boom clean [$t]
     } }
-    { name: "maid target completes registered tools, not the whole catalog", run: {
+    { name: "hermes target completes registered tools, not the whole catalog", run: {
         let offered = ("maid -c " | commandline complete | sort)
         let registry = (read-registry | get name | sort)
         assert-true (($offered | length) > 0)
         assert-equal $offered $registry
         assert-true (($offered | length) < ($MAID_CATALOG | length))
+    } }
+    { name: "hermes-pathway reports each install pathway", run: {
+        assert-equal (hermes-pathway true true) "hermes/local+container"
+        assert-equal (hermes-pathway true false) "hermes/local"
+        assert-equal (hermes-pathway false true) "hermes/container"
+        assert-equal (hermes-pathway false false) null
+    } }
+    { name: "every catalog entry declares the same action fields", run: {
+        let expected = [audit audit_fix category clean detect name prune spec update]
+        let mismatched = ($MAID_CATALOG | where { |t| ($t | columns | sort) != $expected } | get name)
+        assert-equal $mismatched []
+    } }
+    { name: "spec action reports no-action when a tool declares no spec", run: {
+        let t = ($MAID_CATALOG | where { |it| $it.name == npm } | first)
+        let r = (maid-action $t "spec")
+        assert-is-err $r
+        assert-equal $r.error.kind "no-action"
     } }
 ]
