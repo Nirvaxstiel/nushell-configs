@@ -1,81 +1,34 @@
 source ../.carapace.nu
 source ../tests/harness.nu
 
-let flags_help = r#'usage: tool [-h] [--quiet]
+let fixture_dir = ($nu.default-config-dir | path join "tests" "fixtures")
 
-options:
-  -h, --help            show this help message and exit
-  -q, --query QUERY     Query to run. On a real TTY the prompt seeds an
-                        interactive session (submitted literally as the
-                        first turn)
-  --oneshot             Answer the query and exit
-'#
-
-let commands_braces = r#'usage: tool {alpha,beta,gamma} ...
-
-positional arguments:
-  {alpha,beta,gamma}
-    alpha         First thing
-    beta          Second thing
-    gamma         Third thing
-
-options:
-  -h, --help  show this help message and exit
-'#
-
-let commands_metavar = r#'usage: tool COMMAND ...
-
-positional arguments:
-  COMMAND
-    status        Show status
-    prune         Delete stale entries
-
-options:
-  -h, --help  show this help message and exit
-'#
-
-let commands_plain = r#'usage: tool [message] ...
-
-positional arguments:
-  message               Message text. If omitted, read from stdin.
-
-options:
-  -h, --help  show this help message and exit
-'#
+def fixture-spec [] {
+    do { cd $fixture_dir; argparse-spec python "fixture_cli:factory=toolx" }
+}
 
 let carapace_spec_test = [
-    { name: "argparse-section stops before the next unindented header", run: {
-        let section = (argparse-section $commands_braces "positional arguments:")
-        assert-true (($section | first | str trim) == "{alpha,beta,gamma}")
-        assert-true (not ($section | any { |l| $l | str starts-with "options:" }))
+    { name: "walker reads aliases, switches and value flags", run: {
+        let spec = (fixture-spec)
+        assert-equal $spec.name toolx
+        assert-equal $spec.flags.'-v'.description "Verbose output"
+        assert-equal ($spec.flags.'--verbose' | columns) [description]
+        assert-equal $spec.flags.'--mode'.nargs 1
     } }
-    { name: "argparse-flags joins wrapped descriptions and keeps first lines", run: {
-        let flags = (argparse-flags (argparse-entries (argparse-section $flags_help "options:")))
-        assert-true ($flags.'-q'.description | str contains "Query to run")
-        assert-true ($flags.'-q'.description | str contains "first turn")
-        assert-true ($flags.'--query'.description | str contains "interactive session")
+    { name: "walker turns argparse choices into flag completions", run: {
+        assert-equal (fixture-spec).completion.flag.'--mode' [fast slow auto]
     } }
-    { name: "argparse-flags marks value-taking flags with nargs and leaves switches bare", run: {
-        let flags = (argparse-flags (argparse-entries (argparse-section $flags_help "options:")))
-        assert-equal $flags.'--query'.nargs 1
-        assert-equal $flags.'-q'.nargs 1
-        assert-equal ($flags.'--oneshot' | columns) [description]
-        assert-equal $flags.'-h'.description "show this help message and exit"
+    { name: "walker recurses through subparsers with their descriptions", run: {
+        let run = ((fixture-spec).commands | where name == run | first)
+        assert-equal $run.description "Run the thing"
+        assert-equal ($run.commands | get name) [now]
+        assert-equal ($run.flags | columns | sort) [--help --jobs -h -j]
     } }
-    { name: "argparse-commands reads brace groups", run: {
-        let names = (argparse-commands (argparse-entries (argparse-section $commands_braces "positional arguments:")) | get name)
-        assert-equal $names [alpha beta gamma]
-    } }
-    { name: "argparse-commands reads uppercase metavar groups", run: {
-        let parsed = (argparse-commands (argparse-entries (argparse-section $commands_metavar "positional arguments:")))
-        assert-equal ($parsed | get name) [status prune]
-        assert-equal ($parsed | first | get description) "Show status"
-    } }
-    { name: "argparse-commands ignores plain positional arguments", run: {
-        assert-equal (argparse-commands (argparse-entries (argparse-section $commands_plain "positional arguments:"))) []
+    { name: "carapace-spec-path keeps the name carapace registers", run: {
+        assert-equal (carapace-spec-path hermes | path basename) "hermes.yaml"
     } }
     { name: "carapace-specs-dir targets the carapace specs directory", run: {
-        assert-equal (carapace-specs-dir | path basename) "specs"
         assert-equal (carapace-specs-dir | path dirname | path basename) "carapace"
+        assert-equal (carapace-specs-dir | path basename) "specs"
     } }
 ]
