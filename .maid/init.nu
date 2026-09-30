@@ -14,9 +14,17 @@ def maid [
     --all(-a)
     --list(-l)
     --probe(-r)
+    --spec(-s)
     target?: string@maid-targets
 ] {
     if $probe { maid-regen; return }
+
+    if $spec {
+        if ($target | is-empty) { print "specify target or use -s -a"; return }
+        if $all { maid-spec-all; return }
+        maid-spec $target
+        return
+    }
 
     let targets = (get-targets $MAID_CATALOG (read-registry))
 
@@ -79,6 +87,8 @@ def maid-help [] {
     print "  maid -e <name> -f    audit + auto-fix vulnerabilities"
     print "  maid -e -a           audit all"
     print "  maid -a              clean + prune all"
+    print "  maid -s <name>       refresh the tool's completion spec"
+    print "  maid -s -a           refresh all completion specs"
     print ""
     print "  maid -r              regenerate registry"
 }
@@ -115,6 +125,21 @@ def maid-report-failures [results: list<record>] {
         let detail = ($failure.msg? | default $failure.kind)
         print $"  ($failure.target) ($failure.action): ($detail)"
     }
+}
+
+# Specs follow the catalog, not the registry: a tool can declare a completion
+# spec on a machine where its detect closure reports nothing.
+def maid-spec [target: string] {
+    let t = ($MAID_CATALOG | where { |it| $it.name == $target } | first)
+    if ($t == null) { print $"unknown target: ($target)"; return }
+    maid-report-failures [(maid-action $t "spec")]
+}
+
+def maid-spec-all [] {
+    let to_spec = ($MAID_CATALOG | where { |t| $t.spec? | is-not-empty })
+    if ($to_spec | is-empty) { print "no targets declare a spec"; return }
+    print $"refreshing (($to_spec | length)) specs..."
+    maid-report-failures ($to_spec | each { |t| maid-action $t "spec" })
 }
 
 def maid-clean-all [targets: list<record>] {
@@ -182,7 +207,7 @@ def maid-list [targets: list<record>] {
         }
     }
     print ""
-    print "actions: c (clean)  p (prune)  u (update)  e (audit)  a (clean+prune all)"
+    print "actions: c (clean)  p (prune)  u (update)  e (audit)  s (completion spec)  a (clean+prune all)"
     print ""
     let clean_targets = ($targets | where { |t| $t.clean? | is-not-empty })
     let prune_targets = ($targets | where { |t| $t.prune? | is-not-empty })

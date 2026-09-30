@@ -1,3 +1,17 @@
+# hermes runs two ways: a local CLI, or in a container. The Dockerfile in this
+# config is one container approach, not the definition of the tool.
+def hermes-cli [] {
+    (which hermes | is-not-empty)
+}
+
+def hermes-container [] {
+    (which docker | is-not-empty) and ((($nu.default-config-dir | path join "hermes" "Dockerfile") | path exists))
+}
+
+def hermes-pathway [cli: bool, container: bool] {
+    if $cli and $container { "hermes/local+container" } else if $cli { "hermes/local" } else if $container { "hermes/container" } else { null }
+}
+
 let MAID_CATALOG = [
   {
     name: bun
@@ -8,6 +22,7 @@ let MAID_CATALOG = [
     update: {|| bun upgrade }
     audit: {|| bun audit }
     audit_fix: {|| bun audit --fix }
+    spec: null
   }
   {
     name: npm
@@ -18,6 +33,7 @@ let MAID_CATALOG = [
     update: {|| npm update -g }
     audit: {|| npm audit }
     audit_fix: {|| npm audit fix }
+    spec: null
   }
   {
     name: pnpm
@@ -28,6 +44,7 @@ let MAID_CATALOG = [
     update: {|| pnpm up -g }
     audit: {|| pnpm audit }
     audit_fix: {|| pnpm audit fix }
+    spec: null
   }
   {
     name: uv
@@ -38,6 +55,7 @@ let MAID_CATALOG = [
     update: {|| uv self update }
     audit: null
     audit_fix: null
+    spec: null
   }
   {
     name: scoop
@@ -54,6 +72,7 @@ let MAID_CATALOG = [
     }
     audit: null
     audit_fix: null
+    spec: null
   }
   {
     name: choco
@@ -64,6 +83,7 @@ let MAID_CATALOG = [
     update: {|| ^choco upgrade all -y }
     audit: null
     audit_fix: null
+    spec: null
   }
   {
     name: cargo
@@ -74,6 +94,7 @@ let MAID_CATALOG = [
     update: {|| cargo install-update -a }
     audit: null
     audit_fix: null
+    spec: null
   }
   {
     name: dotnet
@@ -84,6 +105,7 @@ let MAID_CATALOG = [
     update: {|| ^dotnet tool update --all --global }
     audit: null
     audit_fix: null
+    spec: null
   }
   {
     name: rustup
@@ -94,6 +116,7 @@ let MAID_CATALOG = [
     update: {|| rustup update }
     audit: null
     audit_fix: null
+    spec: null
   }
   {
     name: gem
@@ -104,6 +127,7 @@ let MAID_CATALOG = [
     update: {|| gem update --system }
     audit: null
     audit_fix: null
+    spec: null
   }
   {
     name: pip
@@ -114,6 +138,7 @@ let MAID_CATALOG = [
     update: {|| python -m pip install --upgrade pip }
     audit: null
     audit_fix: null
+    spec: null
   }
   {
     name: docker
@@ -132,32 +157,37 @@ let MAID_CATALOG = [
     update: {|| ^docker pull nousresearch/hermes-agent:latest }
     audit: null
     audit_fix: null
+    spec: null
   }
   {
     name: hermes
     category: agent
-    detect: {||
-      let has_docker = (which docker | is-not-empty)
-      let has_dockerfile = (($nu.default-config-dir | path join "hermes" "Dockerfile") | path exists)
-      if $has_docker and $has_dockerfile { "hermes/docker" } else { null }
-    }
+    detect: {|| hermes-pathway (hermes-cli) (hermes-container) }
     clean: {||
-      hermes sessions prune
-      hermes checkpoints prune --retention-days 7
-      ^docker image rm hermes-dev 2>/dev/null; null
+      if (hermes-cli) {
+        hermes sessions prune
+        hermes checkpoints prune --retention-days 7
+      }
+      if (hermes-container) {
+        ^docker image rm hermes-dev 2>/dev/null; null
+      }
     }
     prune: {||
-      hermes checkpoints prune
+      if (hermes-cli) { hermes checkpoints prune }
     }
     update: {||
-      hermes update
-      hermes-build --pull --no-prune
+      if (hermes-cli) { hermes update }
+      if (hermes-container) { hermes-build --pull --no-prune }
     }
     audit: {||
-      hermes doctor
+      if (hermes-cli) { hermes doctor }
     }
     audit_fix: {||
-      hermes doctor --fix
+      if (hermes-cli) { hermes doctor --fix }
+    }
+    spec: {||
+      if not (hermes-cli) { error make { msg: "hermes is not on PATH: the spec is generated from the local CLI" } }
+      carapace-spec-write (argparse-spec hermes)
     }
   }
 ]
