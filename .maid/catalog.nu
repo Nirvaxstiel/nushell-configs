@@ -8,6 +8,12 @@ def hermes-container [] {
     (which docker | is-not-empty) and ((($nu.default-config-dir | path join "hermes" "Dockerfile") | path exists))
 }
 
+def hermes-python [] {
+    let python = ($nu.home-dir | path join ".hermes" "hermes-agent" ".venv" "Scripts" "python.exe")
+    if not ($python | path exists) { error make { msg: $"hermes venv python not found at ($python)" } }
+    $python
+}
+
 def hermes-pathway [cli: bool, container: bool] {
     if $cli and $container { "hermes/local+container" } else if $cli { "hermes/local" } else if $container { "hermes/container" } else { null }
 }
@@ -185,9 +191,6 @@ let MAID_CATALOG = [
     audit_fix: {||
       if (hermes-cli) { hermes doctor --fix }
     }
-    spec: {||
-      if not (hermes-cli) { error make { msg: "hermes is not on PATH: the spec is generated from the local CLI" } }
-      carapace-spec-write (argparse-spec hermes)
-    }
+    spec: {|| carapace-spec-write (argparse-spec (hermes-python) "hermes_cli.main:_build_cli_parser=hermes") }
   }
 ]

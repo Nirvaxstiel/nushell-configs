@@ -41,7 +41,7 @@ Edit `.maid/catalog.nu`:
 
 Then `maid -r` to register it.
 
-Every entry declares the same nine fields, so `maid-action` can look any action up by name; a test enforces that uniformity. `spec` is the tool's carapace completion definition and is driven by the catalog rather than the registry, because a tool can declare a spec on a machine where its `detect` closure reports nothing. For a CLI whose surface is argparse-based, `spec: {|| carapace-spec-write (argparse-spec mytool)}` derives it from `--help`, and `maid -s mytool` refreshes it.
+Every entry declares the same nine fields, so `maid-action` can look any action up by name; a test enforces that uniformity. `spec` is the tool's carapace completion definition and is driven by the catalog rather than the registry, because a tool can declare a spec on a machine where its `detect` closure reports nothing. For a Python CLI that can hand over its parser, `spec: {|| carapace-spec-write (argparse-spec <python> "pkg.module:factory=<name>")}` walks that parser in one process (`carapace/argparse_spec.py`), and `maid -s mytool` refreshes it.
 
 `hermes` installs two ways — a local CLI or a container — and the Dockerfile in this repo is one container approach, not the definition of the tool. Its actions branch on `hermes-cli` and `hermes-container` instead of assuming the container path: updates come from `hermes update` on the bare-metal pathway and from `hermes-build` for the container backend, and the CLI-only actions (`sessions`/`checkpoints prune`, `doctor`) run only when the CLI is present.
 
@@ -63,9 +63,11 @@ The completer lives in `.integrations.nu` instead of coming from `carapace _cara
 
 ## Carapace specs
 
-Carapace has no spec for `hermes`, and no bridge can supply one: `carapace --detect hermes` finds nothing, and `hermes completion bash` is a hand-written script rather than argcomplete/click machinery. The `spec` action on the `hermes` catalog entry builds it — `maid -s hermes`, or `maid -s -a` for every tool that declares one — by parsing `hermes --help` for the root command and each subcommand in parallel: about 100 s for 69 commands and 284 subcommands, writing `hermes.yaml` (69 KB) into carapace's specs directory. It needs the local CLI on `PATH`, because that is what it interrogates.
+Carapace has no spec for `hermes`, and no bridge can supply one: `carapace --detect hermes` finds nothing, and `hermes completion bash` is a hand-written script rather than argcomplete/click machinery. The `spec` action on the `hermes` catalog entry builds one — `maid -s hermes`, or `maid -s -a` for every tool that declares one — by importing hermes's own parser and walking it (`carapace/argparse_spec.py`): about 5 s for 77 commands and 372 subcommands, including value completions from argparse `choices` (35 of them, e.g. `chat --format` → `text`, `stream-json`).
 
-Two format rules come from carapace's loader, not from the docs: the file must live in `<UserConfigDir>/carapace/specs`, and `Specs()` only registers names matching `^[a-zA-Z0-9_\-.]+\.yaml$`, so the filename must match the spec `name` and use the `.yaml` extension — a `.json` spec is silently ignored. Run the refresh after a hermes upgrade; the spec covers flags and descriptions to two subcommand levels.
+That replaced parsing `hermes --help` once per command — 354 processes, 103 s, 69 commands, no value completions, and blind to flags the help formatter omits. The cost is one dependency: `hermes_cli.main._build_cli_parser`, a private symbol, named once in the `hermes` catalog entry. If hermes renames it, `maid -s hermes` fails loudly on the missing attribute and the entry is a one-line fix. Nothing is cached, because a 5 s refresh after a hermes upgrade beats a cache that can go stale.
+
+Two format rules come from carapace's loader, not from the docs: the file must live in `<UserConfigDir>/carapace/specs`, and `Specs()` only registers names matching `^[a-zA-Z0-9_\-.]+\.yaml$`, so the filename must match the spec `name` and use the `.yaml` extension — a `.json` spec is silently ignored.
 
 ## Nushell core plugins
 
