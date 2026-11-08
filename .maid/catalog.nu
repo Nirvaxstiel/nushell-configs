@@ -18,12 +18,17 @@ def hermes-pathway [cli: bool, container: bool] {
     if $cli and $container { "hermes/local+container" } else if $cli { "hermes/local" } else if $container { "hermes/container" } else { null }
 }
 
+def dotnet-sdks [] {
+    if (which dotnet | is-empty) { return [] }
+    ^dotnet --list-sdks | lines | where { |l| not ($l | str trim | is-empty) }
+}
+
 let MAID_CATALOG = [
   {
     name: bun
     category: package-manager
     detect: {|| which bun }
-    clean: {|| bun cache clean --force }
+    clean: {|| bun pm cache rm }
     prune: null
     update: {|| bun upgrade }
     audit: {|| bun audit }
@@ -105,7 +110,7 @@ let MAID_CATALOG = [
   {
     name: dotnet
     category: sdk
-    detect: {|| which dotnet }
+    detect: {|| dotnet-sdks }
     clean: {|| ^dotnet nuget locals all --clear }
     prune: null
     update: {|| ^dotnet tool update --all --global }
